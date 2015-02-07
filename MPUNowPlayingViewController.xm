@@ -71,7 +71,7 @@
 	id contentView = %orig;
 	
 	[self setupGesturesForContentView:contentView];
-	
+
 	return contentView;
 }
 

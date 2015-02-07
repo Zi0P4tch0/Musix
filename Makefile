@@ -9,7 +9,7 @@ export PACKAGE_VERSION = 1.0.0
 include theos/makefiles/common.mk
 
 TWEAK_NAME = Musix
-Musix_FILES = Tweak.xm
+Musix_FILES = MPUNowPlayingViewController.xm
 Musix_FRAMEWORKS = MediaPlayer UIKit AVFoundation
 Musix_PRIVATE_FRAMEWORKS = MusicUI MediaPlayerUI
 
