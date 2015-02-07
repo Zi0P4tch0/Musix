@@ -18,10 +18,7 @@
 
 @property(retain) MPAVController * player;
 
--(void)_updateTitles;
-
--(void)setupGestures;
--(void)setupShareButtonIfNecessary;
+-(void)setupGesturesForContentView:(UIView*)contentView;
 
 @end
 
@@ -50,10 +47,8 @@
 }		
 	
 %new
--(void)setupGestures
+-(void)setupGesturesForContentView:(UIView*)contentView
 {
-	%log(@"Setting up gestures...");
-	
 	UISwipeGestureRecognizer *leftSwipeGR = 
 		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
 			                                      action:@selector(swipeDetected:)];
@@ -63,21 +58,26 @@
 		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
 			                                      action:@selector(swipeDetected:)];
 	rightSwipeGR.direction = UISwipeGestureRecognizerDirectionRight;
-	
-	UIView *contentView = MSHookIvar<UIView*>(self, "_contentView");
-		
+			
 	[contentView addGestureRecognizer:leftSwipeGR];
 	[contentView addGestureRecognizer:rightSwipeGR];
 	
 	[leftSwipeGR release];
 	[rightSwipeGR release];
 }
-	
-%new
--(void)setupShareButtonIfNecessary
+
+-(id)_createContentViewForItem:(id)item contentViewController:(id*)contentVC
 {
-	UINavigationItem *navItem = 
-		MSHookIvar<UINavigationItem*>(self, "_effectiveNavigationItem");
+	id contentView = %orig;
+	
+	[self setupGesturesForContentView:contentView];
+	
+	return contentView;
+}
+
+- (id)_effectiveNavigationItem
+{
+	UINavigationItem *navItem = %orig;
 	
 	if (navItem.rightBarButtonItems.count == 1) {
 			
@@ -96,6 +96,8 @@
 		[rightButtons release];
 	
 	}
+	
+	return navItem;
 }
 	
 %new
@@ -116,26 +118,6 @@
 		
 	}];
 	
-}
-
--(void)viewDidAppear:(BOOL)animated
-{
-	%orig(animated);
-			
-	[self _updateTitles];
-	
-	[self setupGestures];
-	
-}
-
-- (void)_updateTitles
-{
-	%orig;
-		
-	//Setup buttons if necessary
-		
-	[self setupShareButtonIfNecessary];
-
 }
 
 %end
