@@ -1,0 +1,9 @@
+Package: com.matteopacini.musix
+Name: Musix
+Depends: mobilesubstrate, firmware (>= 8.0)
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Music App Enhancements
+Maintainer: Matteo Pacini <ispeakprogramming@gmail.com>
+Author: Matteo Pacini <ispeakprogramming@gmail.com>
+Section: Tweaks
