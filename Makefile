@@ -1,4 +1,4 @@
-export THEOS_DEVICE_IP=192.168.1.9
+export THEOS_DEVICE_IP=192.168.1.6
 
 export TARGET = iphone:clang:8.1:8.0
 export ARCHS = armv7 armv7s arm64

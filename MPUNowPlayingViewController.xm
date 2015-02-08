@@ -18,7 +18,9 @@
 
 @interface MPUNowPlayingViewController : UIViewController
 
-@property(retain) MPAVController * player;
+@property(retain) MPAVController* player;
+
+-(id)_effectiveNavigationItem;
 
 -(void)setupGesturesForContentView:(UIView*)contentView;
 
@@ -58,14 +60,12 @@
 		id item = MSHookIvar<MPAVItem*>(self, "_item");
 				
 		ZPNowPlayingItemInfoView *infoView = 
-			[[ZPNowPlayingItemInfoView alloc] initWithFrame:
+			[[[ZPNowPlayingItemInfoView alloc] initWithFrame:
 				CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height) 
-					item:item];
+					item:item] autorelease];
 				
 		[infoView setAlpha:0.f];
 		[contentView addSubview:infoView];
-		
-		[infoView release];
 		
 		[UIView animateWithDuration:0.35f animations:^{
 		
@@ -76,7 +76,9 @@
 	} else if (longPressGR.state == UIGestureRecognizerStateEnded) {
 		
 		for (UIView *subview in contentView.subviews) {
+			
 			if ([subview isKindOfClass:[ZPNowPlayingItemInfoView class]]) {
+				
 				[UIView animateWithDuration:0.35f animations:^{
 		
 					[subview setAlpha:0.f];
@@ -87,6 +89,7 @@
 					
 				}];
 			}
+			
 		}
 		
 	}
@@ -97,26 +100,23 @@
 -(void)setupGesturesForContentView:(UIView*)contentView
 {
 	UISwipeGestureRecognizer *leftSwipeGR = 
-		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
-			                                      action:@selector(swipeDetected:)];
+		[[[UISwipeGestureRecognizer alloc] initWithTarget:self 
+			                                      action:@selector(swipeDetected:)] autorelease];
 	leftSwipeGR.direction = UISwipeGestureRecognizerDirectionLeft;
 	
 	UISwipeGestureRecognizer *rightSwipeGR = 
-		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
-			                                      action:@selector(swipeDetected:)];
+		[[[UISwipeGestureRecognizer alloc] initWithTarget:self 
+			                                      action:@selector(swipeDetected:)] autorelease];
 	rightSwipeGR.direction = UISwipeGestureRecognizerDirectionRight;
 	
 	UILongPressGestureRecognizer *longPressGR =
-		[[UILongPressGestureRecognizer alloc] initWithTarget:self 
-			                                          action:@selector(longPressDetected:)];
+		[[[UILongPressGestureRecognizer alloc] initWithTarget:self 
+			                                          action:@selector(longPressDetected:)] autorelease];
 			
 	[contentView addGestureRecognizer:leftSwipeGR];
 	[contentView addGestureRecognizer:rightSwipeGR];
 	[contentView addGestureRecognizer:longPressGR];
 	
-	[leftSwipeGR release];
-	[rightSwipeGR release];
-	[longPressGR release];
 }
 
 -(id)_createContentViewForItem:(id)item contentViewController:(id*)contentVC
@@ -135,26 +135,22 @@
 	if (navItem.rightBarButtonItems.count == 1) {
 			
 		UIBarButtonItem *shareBtn = 
-			[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction 
+			[[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction 
 									    	              target:self 
-									                      action:@selector(shareTapped)]; //!//
+									                      action:@selector(shareTapped:)] autorelease]; //!//
 		
 		id rightButtons = [navItem.rightBarButtonItems mutableCopy]; //!//
 		[rightButtons addObject:shareBtn];
-		
-		[shareBtn release];
-		
+				
 		[navItem setRightBarButtonItems:rightButtons];
-		
-		[rightButtons release];
-	
+			
 	}
 	
 	return navItem;
 }
 	
 %new
--(void)shareTapped
+-(void)shareTapped:(id)sender
 {				
 	id item = MSHookIvar<MPAVItem*>(self, "_item");
 	AVURLAsset *currentAsset = MSHookIvar<AVURLAsset*>(item, "_asset");
@@ -162,15 +158,27 @@
 	NSArray *activityItems = @[currentAsset.URL];
 
 	UIActivityViewController *activityVC = 
-		[[UIActivityViewController alloc] initWithActivityItems:activityItems 
-			                              applicationActivities:nil];
+		[[[UIActivityViewController alloc] initWithActivityItems:activityItems 
+										  applicationActivities:nil] autorelease];
+	
+	if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
+	{
+		//iPad goes berserk if an anchor point is not specified
+		//http://stackoverflow.com/questions/25644054/uiactivityviewcontroller-crashing-on-ios8-ipads
 		
-	[self presentViewController:activityVC animated:YES completion:^{
+		activityVC.popoverPresentationController.sourceView = 
+			MSHookIvar<UIView*>(self, "_titlesView");
+	}
 		
-		[activityVC release];
-		
-	}];
+	[self presentViewController:activityVC animated:YES completion:nil];
 	
 }
-
 %end
+
+%ctor 
+{
+	@autoreleasepool {
+		%init;
+	}
+	
+}
