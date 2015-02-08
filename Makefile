@@ -15,7 +15,7 @@ Musix_FILES = MPUNowPlayingViewController.xm \
 Musix_FRAMEWORKS = MediaPlayer UIKit AVFoundation
 Musix_PRIVATE_FRAMEWORKS = MusicUI MediaPlayerUI
 
-include $(THEOS_MAKE_PATH)/tweak.mk
+include theos/makefiles/tweak.mk
 
 after-install::
 	install.exec "killall -9 Music MobileMusic"
