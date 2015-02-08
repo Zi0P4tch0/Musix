@@ -3,6 +3,8 @@
 #import <MediaPlayer/MediaPlayer.h>
 #import <UIKit/UIKit.h>
 
+#import "ZPNowPlayingItemInfoView.h"
+
 //////////////////////////
 // What We Need To Know //
 //////////////////////////
@@ -44,7 +46,52 @@
 	{
 		[self.player changePlaybackIndexBy:-1]; 
 	}
-}		
+}	
+
+%new
+-(void)longPressDetected:(UILongPressGestureRecognizer*)longPressGR
+{
+	UIView *contentView = MSHookIvar<UIView*>(self, "_contentView");
+			
+	if (longPressGR.state == UIGestureRecognizerStateBegan) {
+		
+		id item = MSHookIvar<MPAVItem*>(self, "_item");
+				
+		ZPNowPlayingItemInfoView *infoView = 
+			[[ZPNowPlayingItemInfoView alloc] initWithFrame:
+				CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height) 
+					item:item];
+				
+		[infoView setAlpha:0.f];
+		[contentView addSubview:infoView];
+		
+		[infoView release];
+		
+		[UIView animateWithDuration:0.35f animations:^{
+		
+			[infoView setAlpha:1.0f];
+		
+		}];
+		
+	} else if (longPressGR.state == UIGestureRecognizerStateEnded) {
+		
+		for (UIView *subview in contentView.subviews) {
+			if ([subview isKindOfClass:[ZPNowPlayingItemInfoView class]]) {
+				[UIView animateWithDuration:0.35f animations:^{
+		
+					[subview setAlpha:0.f];
+		
+				} completion: ^(BOOL finished){
+					
+					[subview removeFromSuperview];
+					
+				}];
+			}
+		}
+		
+	}
+	
+}	
 	
 %new
 -(void)setupGesturesForContentView:(UIView*)contentView
@@ -58,12 +105,18 @@
 		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
 			                                      action:@selector(swipeDetected:)];
 	rightSwipeGR.direction = UISwipeGestureRecognizerDirectionRight;
+	
+	UILongPressGestureRecognizer *longPressGR =
+		[[UILongPressGestureRecognizer alloc] initWithTarget:self 
+			                                          action:@selector(longPressDetected:)];
 			
 	[contentView addGestureRecognizer:leftSwipeGR];
 	[contentView addGestureRecognizer:rightSwipeGR];
+	[contentView addGestureRecognizer:longPressGR];
 	
 	[leftSwipeGR release];
 	[rightSwipeGR release];
+	[longPressGR release];
 }
 
 -(id)_createContentViewForItem:(id)item contentViewController:(id*)contentVC
