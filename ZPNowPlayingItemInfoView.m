@@ -21,7 +21,7 @@
 
 @interface ZPNowPlayingItemInfoView()
 
-@property (nonatomic, assign) MPAVItem* item;
+@property (nonatomic, retain) MPAVItem* item;
 
 @property (nonatomic, retain) MPUSlantedTextPlaceholderArtworkView *artworkView;
 @property (nonatomic, retain) UILabel *artistLabel;
@@ -147,12 +147,15 @@
 }
 
 -(void)dealloc
-{
-	[super dealloc];
+{	
+	[self.item release];
 	
 	[self.artworkView release];
 	[self.artistLabel release];
 	[self.songLabel release];
+	
+	[super dealloc];
+	
 }
 
 @end
