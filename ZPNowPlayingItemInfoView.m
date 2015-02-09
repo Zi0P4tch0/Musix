@@ -1,6 +1,5 @@
 #import "ZPNowPlayingItemInfoView.h"
 
-#import "UIView+Positioning.h"
 #import "ZPLayoutUtils.h"
 
 /////////////////////////
@@ -61,11 +60,8 @@
 		
 	[self.artworkView setTranslatesAutoresizingMaskIntoConstraints:NO];
 	
-	/*
-	self.artworkView.frame = CGRectMake(10,10,100,100);
 	[self.artworkView.layer setBorderColor:[UIColor blackColor].CGColor];
-	[self.artworkView.layer setBorderWidth:0.5f];
-	*/
+	[self.artworkView.layer setBorderWidth:.5f];
 	
 	[self addSubview:self.artworkView];
 	
@@ -88,8 +84,7 @@
 	[self.artistLabel setText:artist];
 	
 	[self.artistLabel setFont:
-		[UIFont boldSystemFontOfSize:
-		  [[self.artistLabel font] pointSize]]];
+		[UIFont boldSystemFontOfSize:20]];
 						   
 	[self addSubview:self.artistLabel];
 	
@@ -137,30 +132,30 @@
 }
 
 -(void)updateConstraints
-{
-			
+{	
 	NSArray *artworkViewHC = [NSLayoutConstraint constraintsWithVisualFormat:
-	    @"H:|-(width)-[artwork(viewWidth)]-(width2)-[artistLabel]-(width)-|"
+	    @"H:|-(sep)-[artwork(artworkWidth)]-(intraItemSep)-[artistLabel]-(sep)-|"
 		options:NSLayoutFormatAlignAllTop
-	    metrics:@{@"width":@(self.frame.size.width*0.06),
-                  @"viewWidth":@(self.frame.size.width * (0.35 + IPAD_K(0.07))),
-			      @"width2":@(10)}
+	    metrics:@{@"sep":@(self.frame.size.width*0.06),
+                  @"artworkWidth":@(self.frame.size.width * (0.35 + IPAD_K(0.07))),
+			      @"intraItemSep":@(10)}
 	    views:@{@"artwork":self.artworkView,
 		        @"artistLabel":self.artistLabel}];
 		
 	NSArray *artworkViewVC = [NSLayoutConstraint constraintsWithVisualFormat:
-	    @"V:|-(height)-[view(viewHeight)]"
+	    @"V:|-(sep)-[artwork(artworkHeight)]"
 		options:0
-		metrics:@{@"height":@(self.frame.size.width*0.06),
-	              @"viewHeight":@(self.frame.size.width*(0.35 + IPAD_K(0.07)))}
-		views:@{@"view":self.artworkView}];	
+		metrics:@{@"sep":@(self.frame.size.width*0.06),
+	              @"artworkHeight":@(self.frame.size.width*(0.35 + IPAD_K(0.07)))}
+		views:@{@"artwork":self.artworkView}];	
 		
 	NSArray *labelsVC = [NSLayoutConstraint constraintsWithVisualFormat:
 		 @"V:[artistLabel]-[albumLabel]-[songLabel]"
 		options:NSLayoutFormatAlignAllLeft
-		metrics:@{@"height":@(self.frame.size.width*0.06),
-		          @"viewHeight":@(self.frame.size.width*0.45)}
-		views:@{@"artistLabel":self.artistLabel, @"albumLabel":self.albumLabel, @"songLabel":self.songLabel}];	
+		metrics:@{}
+		views:@{@"artistLabel":self.artistLabel, 
+		        @"albumLabel":self.albumLabel, 
+				@"songLabel":self.songLabel}];	
 		
 	id albumLabelWidthC = [NSLayoutConstraint constraintWithItem:self.albumLabel 
 			attribute:NSLayoutAttributeWidth
