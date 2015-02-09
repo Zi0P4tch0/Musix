@@ -86,7 +86,7 @@
 							
 		hasAnimationBeenInterrupted = YES;
 								
-		[UIView animateWithDuration:0.5f delay:0.f options:UIViewAnimationOptionBeginFromCurrentState animations:^{
+		[UIView animateWithDuration:0.35f delay:0.f options:UIViewAnimationOptionBeginFromCurrentState animations:^{
 		
 			fxImageView.frame = [infoView.artworkView frame];
 		
@@ -122,7 +122,7 @@
 		
 		[fxImageView removeFromSuperview];
 			
-		[UIView animateWithDuration:0.5f animations:^{
+		[UIView animateWithDuration:0.35f animations:^{
 
 			infoView.artworkView.frame = CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height);
 
