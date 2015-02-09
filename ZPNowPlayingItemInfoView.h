@@ -6,6 +6,7 @@
 @interface ZPNowPlayingItemInfoView : UIView
 
 -(instancetype)initWithFrame:(CGRect)frame 
-	                    item:(MPAVItem*)item;
+	                    item:(MPAVItem*)item
+						artworkImage:(UIImage*)artworkImage;
 
 @end

@@ -1,16 +1,11 @@
 #import "ZPNowPlayingItemInfoView.h"
 
 #import "UIView+Positioning.h"
+#import "ZPLayoutUtils.h"
 
 /////////////////////////
 // What we can "steal" //
 /////////////////////////
-
-@interface MPUSlantedTextPlaceholderArtworkView : UIImageView
-
--(instancetype)initWithImage:(UIImage*)image;
-
-@end
 
 @interface MPAVItem : NSObject
 @end
@@ -21,9 +16,10 @@
 
 @interface ZPNowPlayingItemInfoView()
 
-@property (nonatomic, retain) MPAVItem* item;
+@property (nonatomic, assign) MPAVItem* item;
+@property (nonatomic, assign) UIImage* artworkImage;
 
-@property (nonatomic, retain) MPUSlantedTextPlaceholderArtworkView *artworkView;
+@property (nonatomic, retain) UIView* artworkView;
 @property (nonatomic, retain) UILabel *artistLabel;
 @property (nonatomic, retain) UILabel *albumLabel;
 @property (nonatomic, retain) UILabel *songLabel;
@@ -34,10 +30,12 @@
 
 -(instancetype)initWithFrame:(CGRect)frame 
 	                    item:(MPAVItem*)item
+						artworkImage:(UIImage*)artworkImage
 {
 	self = [super initWithFrame:frame];
 	if (self) {
 		self.item = item;
+		self.artworkImage = artworkImage;
 		[self setup];
 	}
 	return self;
@@ -52,23 +50,22 @@
 	[self setupArtistLabel];
 	[self setupAlbumLabel];
 	[self setupSongLabel];
+	
+	[self updateConstraints];
 }
 
 -(void)setupArtworkView
 {
-	MPMediaItem *mediaItem = 
-		[self.item valueForKey:@"_mediaItem"];
-	
-	MPMediaItemArtwork *itemArtwork = 
-		[mediaItem valueForProperty:MPMediaItemPropertyArtwork];
-	UIImage *artworkImage = [itemArtwork imageWithSize:CGSizeMake(250, 250)];
-
 	self.artworkView = 
-		[[MPUSlantedTextPlaceholderArtworkView alloc] initWithImage:artworkImage];
+		[[UIImageView alloc] initWithImage:self.artworkImage];
+		
+	[self.artworkView setTranslatesAutoresizingMaskIntoConstraints:NO];
 	
+	/*
 	self.artworkView.frame = CGRectMake(10,10,100,100);
 	[self.artworkView.layer setBorderColor:[UIColor blackColor].CGColor];
 	[self.artworkView.layer setBorderWidth:0.5f];
+	*/
 	
 	[self addSubview:self.artworkView];
 	
@@ -84,19 +81,16 @@
 		[mediaItem valueForProperty:MPMediaItemPropertyArtist];
 	
 	self.artistLabel =
-		[[UILabel alloc] initWithFrame:
-			CGRectMake([self.artworkView right] + 10,
-			           [self.artworkView top],
-					   [self width] - [self.artworkView right] - 20,
-					   [self.artworkView height] / 3)];
+		[[UILabel alloc] initWithFrame:CGRectZero];
+					   
+	[self.artistLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
 					   
 	[self.artistLabel setText:artist];
 	
 	[self.artistLabel setFont:
 		[UIFont boldSystemFontOfSize:
 		  [[self.artistLabel font] pointSize]]];
-	
-					   
+						   
 	[self addSubview:self.artistLabel];
 	
 	[self.artistLabel release];
@@ -111,11 +105,9 @@
 		[mediaItem valueForProperty:MPMediaItemPropertyAlbumTitle];
 	
 	self.albumLabel =
-		[[UILabel alloc] initWithFrame:
-			CGRectMake([self.artistLabel left],
-			           [self.artistLabel bottom],
-					   [self width] - [self.artworkView right] - 20,
-					   [self.artworkView height] / 3)];
+		[[UILabel alloc] initWithFrame:CGRectZero];
+					   
+	[self.albumLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
 					   
 	[self.albumLabel setText:album];
 					   
@@ -133,11 +125,9 @@
 		[mediaItem valueForProperty:MPMediaItemPropertyTitle];
 	
 	self.songLabel =
-		[[UILabel alloc] initWithFrame:
-			CGRectMake([self.albumLabel left],
-			           [self.albumLabel bottom],
-					   [self width] - [self.artworkView right] - 20,
-					   [self.artworkView height] / 3)];
+		[[UILabel alloc] initWithFrame:CGRectZero];
+	
+	[self.songLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
 					   
 	[self.songLabel setText:song];
 					   
@@ -146,12 +136,63 @@
 	[self.songLabel release];
 }
 
--(void)dealloc
-{	
-	[self.item release];
+-(void)updateConstraints
+{
+			
+	NSArray *artworkViewHC = [NSLayoutConstraint constraintsWithVisualFormat:
+	    @"H:|-(width)-[artwork(viewWidth)]-(width2)-[artistLabel]-(width)-|"
+		options:NSLayoutFormatAlignAllTop
+	    metrics:@{@"width":@(self.frame.size.width*0.06),
+                  @"viewWidth":@(self.frame.size.width * (0.35 + IPAD_K(0.07))),
+			      @"width2":@(10)}
+	    views:@{@"artwork":self.artworkView,
+		        @"artistLabel":self.artistLabel}];
+		
+	NSArray *artworkViewVC = [NSLayoutConstraint constraintsWithVisualFormat:
+	    @"V:|-(height)-[view(viewHeight)]"
+		options:0
+		metrics:@{@"height":@(self.frame.size.width*0.06),
+	              @"viewHeight":@(self.frame.size.width*(0.35 + IPAD_K(0.07)))}
+		views:@{@"view":self.artworkView}];	
+		
+	NSArray *labelsVC = [NSLayoutConstraint constraintsWithVisualFormat:
+		 @"V:[artistLabel]-[albumLabel]-[songLabel]"
+		options:NSLayoutFormatAlignAllLeft
+		metrics:@{@"height":@(self.frame.size.width*0.06),
+		          @"viewHeight":@(self.frame.size.width*0.45)}
+		views:@{@"artistLabel":self.artistLabel, @"albumLabel":self.albumLabel, @"songLabel":self.songLabel}];	
+		
+	id albumLabelWidthC = [NSLayoutConstraint constraintWithItem:self.albumLabel 
+			attribute:NSLayoutAttributeWidth
+		    relatedBy:NSLayoutRelationEqual
+			toItem: self.artistLabel
+			attribute: NSLayoutAttributeWidth
+			multiplier: 1.0
+			constant: 0];
 	
+	id songLabelWidthC = [NSLayoutConstraint constraintWithItem:self.songLabel 
+			attribute:NSLayoutAttributeWidth
+		    relatedBy:NSLayoutRelationEqual
+			toItem: self.artistLabel
+			attribute: NSLayoutAttributeWidth
+			multiplier: 1.0
+			constant: 0];
+		
+	[self addConstraints:artworkViewHC];
+	[self addConstraints:artworkViewVC];
+	[self addConstraints:labelsVC];
+	[self addConstraint:albumLabelWidthC];
+	[self addConstraint:songLabelWidthC];
+	
+	[super updateConstraints];
+}
+
+-(void)dealloc
+{		
 	[self.artworkView release];
+	
 	[self.artistLabel release];
+	[self.albumLabel release];
 	[self.songLabel release];
 	
 	[super dealloc];

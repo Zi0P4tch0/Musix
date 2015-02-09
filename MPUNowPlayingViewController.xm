@@ -55,7 +55,7 @@
 %new
 -(void)longPressDetected:(UILongPressGestureRecognizer*)longPressGR
 {
-	UIView *contentView = MSHookIvar<UIView*>(self, "_contentView");
+	UIImageView *contentView = MSHookIvar<UIImageView*>(self, "_contentView");
 			
 	if (longPressGR.state == UIGestureRecognizerStateBegan) {
 		
@@ -64,7 +64,8 @@
 		ZPNowPlayingItemInfoView *infoView = 
 			[[ZPNowPlayingItemInfoView alloc] initWithFrame:
 				CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height) 
-					item:item];
+					item:item
+					artworkImage:[contentView image]];
 								
 		[infoView setAlpha:0.f];
 		[contentView addSubview:infoView];
@@ -184,8 +185,8 @@
 		//iPad goes berserk if an anchor point is not specified
 		//http://stackoverflow.com/questions/25644054/uiactivityviewcontroller-crashing-on-ios8-ipads
 		
-		activityVC.popoverPresentationController.sourceView = 
-			MSHookIvar<UIView*>(self, "_titlesView");
+		activityVC.popoverPresentationController.barButtonItem = 
+			[[[self _effectiveNavigationItem] rightBarButtonItems] lastObject];
 	}
 		
 	[self presentViewController:activityVC animated:YES completion:^{
