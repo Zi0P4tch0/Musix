@@ -155,7 +155,6 @@
 	[self.songLabel release];
 	
 	[super dealloc];
-	
 }
 
 @end

@@ -14,5 +14,4 @@
 -(void)setLeft:(CGFloat)left;
 -(void)setRight:(CGFloat)right;
 
-
 @end
