@@ -18,7 +18,7 @@
 @property (nonatomic, assign) MPAVItem* item;
 @property (nonatomic, assign) UIImage* artworkImage;
 
-@property (nonatomic, retain) UIView* artworkView;
+@property (nonatomic, retain, readwrite) UIView* artworkView;
 @property (nonatomic, retain) UILabel *artistLabel;
 @property (nonatomic, retain) UILabel *albumLabel;
 @property (nonatomic, retain) UILabel *songLabel;
@@ -51,6 +51,8 @@
 	[self setupSongLabel];
 	
 	[self updateConstraints];
+	
+	[self bringSubviewToFront:self.artworkView];
 }
 
 -(void)setupArtworkView

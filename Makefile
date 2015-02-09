@@ -12,7 +12,7 @@ TWEAK_NAME = Musix
 Musix_FILES = MPUNowPlayingViewController.xm \
 	ZPNowPlayingItemInfoView.m \
 	ZPLayoutUtils.m
-Musix_FRAMEWORKS = MediaPlayer UIKit AVFoundation CoreGraphics
+Musix_FRAMEWORKS = MediaPlayer UIKit AVFoundation CoreGraphics 
 Musix_PRIVATE_FRAMEWORKS = MusicUI MediaPlayerUI
 
 include theos/makefiles/tweak.mk

@@ -54,7 +54,10 @@
 
 %new
 -(void)longPressDetected:(UILongPressGestureRecognizer*)longPressGR
-{
+{					
+	static BOOL hasAnimationBeenInterrupted;
+	static UIView *fxImageView;
+	
 	UIImageView *contentView = MSHookIvar<UIImageView*>(self, "_contentView");
 			
 	if (longPressGR.state == UIGestureRecognizerStateBegan) {
@@ -67,15 +70,32 @@
 					item:item
 					artworkImage:[contentView image]];
 								
-		[infoView setAlpha:0.f];
 		[contentView addSubview:infoView];
 				
 		[infoView release];
-						
-		[UIView animateWithDuration:0.35f animations:^{
 		
-			[infoView setAlpha:1.0f];
+		[infoView setNeedsLayout];
+		[infoView layoutIfNeeded];
 		
+		fxImageView = [[UIImageView alloc] initWithImage:[contentView image]];
+		[fxImageView setFrame:CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height)];
+		
+		[contentView addSubview:fxImageView];
+		
+		[fxImageView release];
+							
+		hasAnimationBeenInterrupted = YES;
+								
+		[UIView animateWithDuration:0.5f delay:0.f options:UIViewAnimationOptionBeginFromCurrentState animations:^{
+		
+			fxImageView.frame = [infoView.artworkView frame];
+		
+		} completion:^(BOOL finished) {
+				
+			if (finished) {
+				hasAnimationBeenInterrupted = NO;
+			}
+			
 		}];
 		
 	} else if (longPressGR.state == UIGestureRecognizerStateEnded) {
@@ -92,10 +112,19 @@
 			}
 			
 		}
-				
-		[UIView animateWithDuration:0.35f animations:^{
+		
+		if (hasAnimationBeenInterrupted) {
+			
+			[fxImageView.layer.presentationLayer removeAllAnimations];
+			infoView.artworkView.frame = [fxImageView.layer.presentationLayer frame];
+			
+		}
+		
+		[fxImageView removeFromSuperview];
+			
+		[UIView animateWithDuration:0.5f animations:^{
 
-			[infoView setAlpha:0.f];
+			infoView.artworkView.frame = CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height);
 
 		} completion: ^(BOOL finished){
 			
