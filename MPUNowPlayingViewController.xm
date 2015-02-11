@@ -25,6 +25,7 @@
 -(id)_effectiveNavigationItem;
 
 -(void)setupGesturesForContentView:(UIView*)contentView;
+-(void)setupButtonsForContentView:(UIView*)contentView;
 
 @end
 
@@ -36,6 +37,35 @@
 ///////////
 
 %hook MPUNowPlayingViewController
+	
+%new
+-(void)dismissInfoView
+{
+	UIImageView *contentView = MSHookIvar<UIImageView*>(self, "_contentView");
+	ZPNowPlayingItemInfoView *infoView = nil;
+	
+	for (UIView *subview in contentView.subviews) {
+		if ([subview isKindOfClass:[ZPNowPlayingItemInfoView class]]) {
+			infoView = (ZPNowPlayingItemInfoView*)subview;
+			break;
+		}
+	}	
+	
+	[UIView animateWithDuration:0.35f animations:^{
+		
+		infoView.artworkView.frame = 
+			CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height);
+		
+	} completion:^(BOOL finished) {
+	
+		[infoView removeFromSuperview];
+		
+	}];
+	
+	//Get rid of observer
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	
+}
 	
 %new
 -(void)swipeDetected:(UISwipeGestureRecognizer*)gestureRecognizer
@@ -53,87 +83,47 @@
 }	
 
 %new
--(void)longPressDetected:(UILongPressGestureRecognizer*)longPressGR
-{					
-	static BOOL hasAnimationBeenInterrupted;
-	static UIView *fxImageView;
-	
+-(void)moreTapped:(UIButton*)moreBtn
+{			
 	UIImageView *contentView = MSHookIvar<UIImageView*>(self, "_contentView");
 			
-	if (longPressGR.state == UIGestureRecognizerStateBegan) {
-		
-		id item = MSHookIvar<MPAVItem*>(self, "_item");
+	id item = MSHookIvar<MPAVItem*>(self, "_item");
 				
-		ZPNowPlayingItemInfoView *infoView = 
-			[[ZPNowPlayingItemInfoView alloc] initWithFrame:
-				CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height) 
-					item:item
-					artworkImage:[contentView image]];
+	ZPNowPlayingItemInfoView *infoView = 
+		[[ZPNowPlayingItemInfoView alloc] initWithFrame:
+			CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height) 
+				item:item
+				artworkImage:[contentView image]];
 								
-		[contentView addSubview:infoView];
+	[contentView addSubview:infoView];
 				
-		[infoView release];
+	[infoView release];
 		
-		[infoView setNeedsLayout];
-		[infoView layoutIfNeeded];
+	[infoView setNeedsLayout];
+	[infoView layoutIfNeeded];
 		
-		fxImageView = [[UIImageView alloc] initWithImage:[contentView image]];
-		[fxImageView setFrame:CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height)];
+	UIView *fxImageView = [[UIImageView alloc] initWithImage:[contentView image]];
+	[fxImageView setFrame:CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height)];
 		
-		[contentView addSubview:fxImageView];
+	[contentView addSubview:fxImageView];
 		
-		[fxImageView release];
-							
-		hasAnimationBeenInterrupted = YES;
+	[fxImageView release];				
 								
-		[UIView animateWithDuration:0.35f delay:0.f options:UIViewAnimationOptionBeginFromCurrentState animations:^{
+	[UIView animateWithDuration:0.35f animations:^{
 		
-			fxImageView.frame = [infoView.artworkView frame];
+		fxImageView.frame = [infoView.artworkView frame];
 		
-		} completion:^(BOOL finished) {
-				
-			if (finished) {
-				hasAnimationBeenInterrupted = NO;
-			}
-			
-		}];
-		
-	} else if (longPressGR.state == UIGestureRecognizerStateEnded) {
-		
-		ZPNowPlayingItemInfoView* infoView = nil;
-		
-		for (UIView *subview in contentView.subviews) {
-			
-			if ([subview isKindOfClass:[ZPNowPlayingItemInfoView class]]) {
-												
-				infoView = (ZPNowPlayingItemInfoView*)subview;
-				break;
-											
-			}
-			
-		}
-		
-		if (hasAnimationBeenInterrupted) {
-			
-			[fxImageView.layer.presentationLayer removeAllAnimations];
-			infoView.artworkView.frame = [fxImageView.layer.presentationLayer frame];
-			
-		}
+	} completion:^(BOOL finished){
 		
 		[fxImageView removeFromSuperview];
-			
-		[UIView animateWithDuration:0.35f animations:^{
-
-			infoView.artworkView.frame = CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height);
-
-		} completion: ^(BOOL finished){
-			
-			[infoView removeFromSuperview];
-			
-		}];
 		
-	}
-	
+		[[NSNotificationCenter defaultCenter] addObserver:self 
+			selector:@selector(dismissInfoView) 
+			name:@"ZPNowPlayingItemInfoViewShouldDisappear" 
+			object:nil];
+		
+	}];
+		
 }	
 	
 %new
@@ -149,18 +139,40 @@
 			                                      action:@selector(swipeDetected:)];
 	rightSwipeGR.direction = UISwipeGestureRecognizerDirectionRight;
 	
-	UILongPressGestureRecognizer *longPressGR =
-		[[UILongPressGestureRecognizer alloc] initWithTarget:self 
-			                                          action:@selector(longPressDetected:)];
-			
 	[contentView addGestureRecognizer:leftSwipeGR];
 	[contentView addGestureRecognizer:rightSwipeGR];
-	[contentView addGestureRecognizer:longPressGR];
 	
 	[leftSwipeGR release];
 	[rightSwipeGR release];
-	[longPressGR release];
 	
+}
+
+%new
+-(void)setupButtonsForContentView:(UIView*)contentView
+{	
+	UIButton *moreBtn = [UIButton buttonWithType:UIButtonTypeInfoLight];
+	[moreBtn setTranslatesAutoresizingMaskIntoConstraints:NO];
+	
+	[moreBtn addTarget:self action:@selector(moreTapped:) forControlEvents:UIControlEventTouchUpInside];
+	
+	[contentView addSubview:moreBtn];
+		
+	NSArray *moreButtonHC = [NSLayoutConstraint constraintsWithVisualFormat:
+	    @"H:[moreBtn]-|"
+		options:0
+	    metrics:@{}
+	    views:@{@"moreBtn":moreBtn}];
+		
+	NSArray *moreButtonVC = [NSLayoutConstraint constraintsWithVisualFormat:
+		@"V:|-[moreBtn]"
+		options:0
+		metrics:@{}
+		views:@{@"moreBtn":moreBtn}];
+		
+	[contentView addConstraints:moreButtonHC];
+	[contentView addConstraints:moreButtonVC];
+		
+	[contentView updateConstraints];
 }
 
 -(id)_createContentViewForItem:(id)item contentViewController:(id*)contentVC
@@ -168,6 +180,7 @@
 	id contentView = %orig;
 	
 	[self setupGesturesForContentView:contentView];
+	[self setupButtonsForContentView:contentView];
 
 	return contentView;
 }
