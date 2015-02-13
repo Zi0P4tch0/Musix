@@ -1,0 +1,6 @@
+#ifndef ZPGLOBALS_H
+#define ZPGLOBALS_H
+
+#define ARTWORK_VIEW_VISIBLE_AREA_WHEN_UP 35
+
+#endif

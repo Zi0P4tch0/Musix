@@ -1,5 +1,7 @@
 #import "ZPNowPlayingItemInfoView.h"
 
+#import "ZPGlobals.h"
+
 /////////////////////////
 // What we can "steal" //
 /////////////////////////
@@ -68,7 +70,7 @@
 			toItem:self
 			attribute:NSLayoutAttributeTop
 			multiplier:1
-			constant:10];
+			constant:10 + ARTWORK_VIEW_VISIBLE_AREA_WHEN_UP];
 	
 	NSLayoutConstraint *artworkViewHC =
     	[NSLayoutConstraint constraintWithItem:self.artworkView 

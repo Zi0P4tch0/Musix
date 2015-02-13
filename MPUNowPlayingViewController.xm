@@ -4,6 +4,7 @@
 #import <UIKit/UIKit.h>
 
 #import "ZPNowPlayingItemInfoView.h"
+#import "ZPGlobals.h"
 
 #define IPAD if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
@@ -61,9 +62,13 @@
 	static BOOL goingUp;
 	
 	UIView *contentView = MSHookIvar<UIView*>(self, "_contentView");
+	
+	ZPNowPlayingItemInfoView *infoView = [self infoView];
 		
 	if (panGR.state == UIGestureRecognizerStateBegan) 
 	{		
+		[infoView setAlpha:1.f];
+	
 		lastCenter = [contentView center];
 	} 
 	else if (panGR.state == UIGestureRecognizerStateChanged)
@@ -73,7 +78,7 @@
 		CGFloat nextY = contentView.frame.origin.y + translatedPoint.y;
 				
 		if (nextY <= self.topLayoutGuide.length && 
-			nextY >= -contentView.frame.size.height + self.topLayoutGuide.length + 35)
+			nextY >= -contentView.frame.size.height + self.topLayoutGuide.length + ARTWORK_VIEW_VISIBLE_AREA_WHEN_UP)
 		{
 			[contentView setCenter:
 					CGPointMake(contentView.center.x, 
@@ -103,7 +108,7 @@
 								
 					contentView.frame =
 						CGRectMake(0,
-					               -contentView.frame.size.height + self.topLayoutGuide.length + 35,
+					               -contentView.frame.size.height + self.topLayoutGuide.length + ARTWORK_VIEW_VISIBLE_AREA_WHEN_UP,
 								   contentView.frame.size.width,
 								   contentView.frame.size.height);
 				
@@ -131,6 +136,7 @@
 				
 			} completion:^(BOOL finished) {
 					
+					[infoView setAlpha:0.f];
 					[panGR setEnabled:YES];
 					
 			}];
@@ -164,8 +170,6 @@
 %new
 -(void)setupInfoViewWithContentView:(UIImageView*)contentView
 {	
-	%log;
-	
 	id item = MSHookIvar<MPAVItem*>(self, "_item");
 	
 	ZPNowPlayingItemInfoView *infoView = 
@@ -199,9 +203,7 @@
 
 %new
 -(void)setupGesturesForContentView:(UIImageView*)contentView
-{	
-	%log;
-	
+{		
 	UISwipeGestureRecognizer *leftSwipeGR = 
 		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
 			                                      action:@selector(horizontalSwipeDetected:)];
