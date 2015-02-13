@@ -18,14 +18,16 @@
 @end
 
 
-@interface MPUNowPlayingViewController : UIViewController
+@interface MPUNowPlayingViewController : UIViewController<UIGestureRecognizerDelegate>
 
 @property(retain) MPAVController* player;
 
 -(id)_effectiveNavigationItem;
 
 -(void)setupGesturesForContentView:(UIView*)contentView;
--(void)setupButtonsForContentView:(UIView*)contentView;
+-(void)setupInfoViewWithContentView:(UIView*)contentView;
+
+-(ZPNowPlayingItemInfoView*)infoView;
 
 @end
 
@@ -39,36 +41,105 @@
 %hook MPUNowPlayingViewController
 	
 %new
--(void)dismissInfoView
+-(ZPNowPlayingItemInfoView*)infoView
 {
-	UIImageView *contentView = MSHookIvar<UIImageView*>(self, "_contentView");
 	ZPNowPlayingItemInfoView *infoView = nil;
 	
-	for (UIView *subview in contentView.subviews) {
+	for (UIView *subview in self.view.subviews) {
 		if ([subview isKindOfClass:[ZPNowPlayingItemInfoView class]]) {
 			infoView = (ZPNowPlayingItemInfoView*)subview;
-			break;
 		}
-	}	
+	}
 	
-	[UIView animateWithDuration:0.35f animations:^{
-		
-		infoView.artworkView.frame = 
-			CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height);
-		
-	} completion:^(BOOL finished) {
-	
-		[infoView removeFromSuperview];
-		
-	}];
-	
-	//Get rid of observer
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	
+	return infoView;
 }
 	
 %new
--(void)swipeDetected:(UISwipeGestureRecognizer*)gestureRecognizer
+-(void)panDetected:(UIPanGestureRecognizer*)panGR
+{
+	static CGPoint lastCenter;
+	static BOOL goingUp;
+	
+	UIView *contentView = MSHookIvar<UIView*>(self, "_contentView");
+		
+	if (panGR.state == UIGestureRecognizerStateBegan) 
+	{		
+		lastCenter = [contentView center];
+	} 
+	else if (panGR.state == UIGestureRecognizerStateChanged)
+	{		
+		CGPoint translatedPoint = [panGR translationInView:contentView];
+										
+		CGFloat nextY = contentView.frame.origin.y + translatedPoint.y;
+				
+		if (nextY <= self.topLayoutGuide.length && 
+			nextY >= -contentView.frame.size.height + self.topLayoutGuide.length + 35)
+		{
+			[contentView setCenter:
+					CGPointMake(contentView.center.x, 
+				            	contentView.center.y + translatedPoint.y)];	
+		
+			goingUp = contentView.center.y < lastCenter.y;
+		}
+		
+		[panGR setTranslation:CGPointZero inView:contentView];
+		
+		lastCenter = [contentView center];
+	}
+	else if (panGR.state == UIGestureRecognizerStateEnded)
+	{		
+		//CGFloat velocity = [panGR velocityInView:contentView].y;
+			
+		[panGR setEnabled:NO];
+		
+		if (goingUp) 
+		{
+			[UIView animateWithDuration:0.45f 
+				delay:0.f 
+				usingSpringWithDamping:0.6f
+				initialSpringVelocity:0.15f
+				options:0
+			 	animations:^{
+								
+					contentView.frame =
+						CGRectMake(0,
+					               -contentView.frame.size.height + self.topLayoutGuide.length + 35,
+								   contentView.frame.size.width,
+								   contentView.frame.size.height);
+				
+				} completion:^(BOOL finished) {
+					
+					[panGR setEnabled:YES];
+					
+				}];
+				
+		}
+		else
+		{
+			[UIView animateWithDuration:0.45f 
+				delay:0.f 
+				usingSpringWithDamping:0.6f 
+				initialSpringVelocity:0.15f 
+				options:0
+			 	animations:^{
+				
+				contentView.frame =
+					CGRectMake(0,
+				               self.topLayoutGuide.length,
+							   contentView.frame.size.width,
+							   contentView.frame.size.height);
+				
+			} completion:^(BOOL finished) {
+					
+					[panGR setEnabled:YES];
+					
+			}];
+		}
+	}
+}
+	
+%new
+-(void)horizontalSwipeDetected:(UISwipeGestureRecognizer*)gestureRecognizer
 {
 		
 	if (gestureRecognizer.direction == UISwipeGestureRecognizerDirectionLeft)
@@ -80,110 +151,101 @@
 	{
 		[self.player changePlaybackIndexBy:-1]; 
 	}
+	
 }	
 
 %new
--(void)moreTapped:(UIButton*)moreBtn
-{			
-	UIImageView *contentView = MSHookIvar<UIImageView*>(self, "_contentView");
-			
-	id item = MSHookIvar<MPAVItem*>(self, "_item");
-				
-	ZPNowPlayingItemInfoView *infoView = 
-		[[ZPNowPlayingItemInfoView alloc] initWithFrame:
-			CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height) 
-				item:item
-				artworkImage:[contentView image]];
-								
-	[contentView addSubview:infoView];
-				
-	[infoView release];
-		
-	[infoView setNeedsLayout];
-	[infoView layoutIfNeeded];
-		
-	UIView *fxImageView = [[UIImageView alloc] initWithImage:[contentView image]];
-	[fxImageView setFrame:CGRectMake(0,0,contentView.frame.size.width,contentView.frame.size.height)];
-		
-	[contentView addSubview:fxImageView];
-		
-	[fxImageView release];				
-								
-	[UIView animateWithDuration:0.35f animations:^{
-		
-		fxImageView.frame = [infoView.artworkView frame];
-		
-	} completion:^(BOOL finished){
-		
-		[fxImageView removeFromSuperview];
-		
-		[[NSNotificationCenter defaultCenter] addObserver:self 
-			selector:@selector(dismissInfoView) 
-			name:@"ZPNowPlayingItemInfoViewShouldDisappear" 
-			object:nil];
-		
-	}];
-		
-}	
-	
-%new
--(void)setupGesturesForContentView:(UIView*)contentView
+-(BOOL)gestureRecognizer:(UIGestureRecognizer*)gr 
+	shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer*)other
 {
+	return NO;
+}
+
+%new
+-(void)setupInfoViewWithContentView:(UIImageView*)contentView
+{	
+	%log;
+	
+	id item = MSHookIvar<MPAVItem*>(self, "_item");
+	
+	ZPNowPlayingItemInfoView *infoView = 
+		[[ZPNowPlayingItemInfoView alloc] initWithItem:item
+			                              artworkImage:[contentView image]];
+			
+	[infoView setTranslatesAutoresizingMaskIntoConstraints:NO];
+			
+	[self.view addSubview:infoView];
+	[infoView release];
+	
+	NSArray *infoViewVC = [NSLayoutConstraint constraintsWithVisualFormat:
+	    @"V:[guide][infoView(infoViewHeight)]"
+		options:0
+	    metrics:@{@"infoViewHeight":@(contentView.frame.size.height)}
+	    views:@{@"infoView":infoView, @"guide": self.topLayoutGuide}];
+		
+	NSArray *infoViewHC = [NSLayoutConstraint constraintsWithVisualFormat:
+		@"H:|[infoView]|"
+		options:0
+		metrics:@{}
+		views:@{@"infoView":infoView}];
+		
+	[self.view addConstraints:infoViewVC];
+	[self.view addConstraints:infoViewHC];
+	
+	[self.view bringSubviewToFront:contentView];
+	
+	[infoView setAlpha:0.f];
+}
+
+%new
+-(void)setupGesturesForContentView:(UIImageView*)contentView
+{	
+	%log;
+	
 	UISwipeGestureRecognizer *leftSwipeGR = 
 		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
-			                                      action:@selector(swipeDetected:)];
+			                                      action:@selector(horizontalSwipeDetected:)];
 	leftSwipeGR.direction = UISwipeGestureRecognizerDirectionLeft;
 	
 	UISwipeGestureRecognizer *rightSwipeGR = 
 		[[UISwipeGestureRecognizer alloc] initWithTarget:self 
-			                                      action:@selector(swipeDetected:)];
+			                                      action:@selector(horizontalSwipeDetected:)];
 	rightSwipeGR.direction = UISwipeGestureRecognizerDirectionRight;
 	
+	UIPanGestureRecognizer *panGR = 
+		[[UIPanGestureRecognizer alloc] initWithTarget:self 
+			                                    action:@selector(panDetected:)];
+	
+	leftSwipeGR.delegate = self;
+	rightSwipeGR.delegate = self;
+	panGR.delegate = self;
+		
 	[contentView addGestureRecognizer:leftSwipeGR];
 	[contentView addGestureRecognizer:rightSwipeGR];
+	[contentView addGestureRecognizer:panGR];
+	
+	[panGR requireGestureRecognizerToFail:leftSwipeGR];
+	[panGR requireGestureRecognizerToFail:rightSwipeGR];
 	
 	[leftSwipeGR release];
 	[rightSwipeGR release];
-	
-}
-
-%new
--(void)setupButtonsForContentView:(UIView*)contentView
-{	
-	UIButton *moreBtn = [UIButton buttonWithType:UIButtonTypeInfoLight];
-	[moreBtn setTranslatesAutoresizingMaskIntoConstraints:NO];
-	
-	[moreBtn addTarget:self action:@selector(moreTapped:) forControlEvents:UIControlEventTouchUpInside];
-	
-	[contentView addSubview:moreBtn];
-		
-	NSArray *moreButtonHC = [NSLayoutConstraint constraintsWithVisualFormat:
-	    @"H:[moreBtn]-|"
-		options:0
-	    metrics:@{}
-	    views:@{@"moreBtn":moreBtn}];
-		
-	NSArray *moreButtonVC = [NSLayoutConstraint constraintsWithVisualFormat:
-		@"V:|-[moreBtn]"
-		options:0
-		metrics:@{}
-		views:@{@"moreBtn":moreBtn}];
-		
-	[contentView addConstraints:moreButtonHC];
-	[contentView addConstraints:moreButtonVC];
-		
-	[contentView updateConstraints];
+	[panGR release];
 }
 
 -(id)_createContentViewForItem:(id)item contentViewController:(id*)contentVC
 {
-	id contentView = %orig;
+	UIImageView *contentView = %orig;
 	
+	[self setupInfoViewWithContentView:contentView];
 	[self setupGesturesForContentView:contentView];
-	[self setupButtonsForContentView:contentView];
 
 	return contentView;
 }
+
+
+/////////////
+// Sharing //
+/////////////
 
 - (id)_effectiveNavigationItem
 {

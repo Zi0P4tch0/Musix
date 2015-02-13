@@ -1,7 +1,5 @@
 #import "ZPNowPlayingItemInfoView.h"
 
-#import "ZPLayoutUtils.h"
-
 /////////////////////////
 // What we can "steal" //
 /////////////////////////
@@ -17,7 +15,6 @@
 
 @property (nonatomic, assign) MPAVItem* item;
 
-@property (nonatomic, retain) UIButton *backButton;
 @property (nonatomic, assign) UIImage* artworkImage;
 
 @property (nonatomic, retain, readwrite) UIView* artworkView;
@@ -26,11 +23,10 @@
 
 @implementation ZPNowPlayingItemInfoView
 
--(instancetype)initWithFrame:(CGRect)frame 
-	                    item:(MPAVItem*)item
-						artworkImage:(UIImage*)artworkImage
+-(instancetype)initWithItem:(MPAVItem*)item
+			   artworkImage:(UIImage*)artworkImage
 {
-	self = [super initWithFrame:frame];
+	self = [super initWithFrame:CGRectZero];
 	if (self) {
 		self.item = item;
 		self.artworkImage = artworkImage;
@@ -39,35 +35,13 @@
 	return self;
 }
 
--(void)backTapped:(UIButton*)backButton
-{
-	[[NSNotificationCenter defaultCenter] postNotificationName:@"ZPNowPlayingItemInfoViewShouldDisappear" object:nil];
-}
-
 -(void)setup
 {
 	[self setBackgroundColor:[UIColor whiteColor]];
-	
-	[self setupBackButton];
-	
+		
 	[self setupArtworkView];
 	
-	[self updateConstraints];
-	
-	[self bringSubviewToFront:self.artworkView];
-}
-
--(void)setupBackButton
-{
-	self.backButton = [UIButton buttonWithType:UIButtonTypeSystem];
-	[self.backButton setTitle:@"Back" forState:UIControlStateNormal];
-	
-	[self.backButton setTranslatesAutoresizingMaskIntoConstraints:NO];
-	
-	[self.backButton addTarget:self action:@selector(backTapped:) forControlEvents:UIControlEventTouchUpInside];
-	
-	[self addSubview:self.backButton];
-		
+	[self addConstraints];
 }
 
 -(void)setupArtworkView
@@ -85,48 +59,54 @@
 	[self.artworkView release];
 }
 
--(void)updateConstraints
-{	
-	NSArray *artworkViewHC = [NSLayoutConstraint constraintsWithVisualFormat:
-	    @"H:|-(sep)-[artwork(artworkWidth)]"
-		options:NSLayoutFormatAlignAllTop
-	    metrics:@{@"sep":@(self.frame.size.width*0.06),
-                  @"artworkWidth":@(self.frame.size.width * (0.35 + IPAD_K(0.07)))}
-	    views:@{@"artwork":self.artworkView}];
-				
-	NSArray *artworkViewVC = [NSLayoutConstraint constraintsWithVisualFormat:
-	    @"V:|-(sep)-[artwork(artworkHeight)]"
-		options:0
-		metrics:@{@"sep":@(self.frame.size.width*0.06),
-	              @"artworkHeight":@(self.frame.size.width*(0.35 + IPAD_K(0.07)))}
-		views:@{@"artwork":self.artworkView}];	
-		
-	NSArray *backButtonHC = [NSLayoutConstraint constraintsWithVisualFormat:
-		@"H:[backButton]-(sep)-|"
-		options:0
-		metrics:@{@"sep":@(self.frame.size.width*0.06)}
-		views:@{@"backButton":self.backButton}];	
-		
-	NSArray *backButtonVC = [NSLayoutConstraint constraintsWithVisualFormat:
-		@"V:|-(sep)-[backButton]"
-		options:0
-		metrics:@{@"sep":@(self.frame.size.width*0.06)}
-		views:@{@"backButton":self.backButton}];	
-		
-
-	[self addConstraints:artworkViewHC];
-	[self addConstraints:artworkViewVC];
-	[self addConstraints:backButtonHC];
-	[self addConstraints:backButtonVC];
+-(void)addConstraints
+{		
+	NSLayoutConstraint *artworkViewVC =
+    	[NSLayoutConstraint constraintWithItem:self.artworkView 
+			attribute: NSLayoutAttributeTop 
+			relatedBy:NSLayoutRelationEqual 
+			toItem:self
+			attribute:NSLayoutAttributeTop
+			multiplier:1
+			constant:10];
 	
-	[super updateConstraints];
+	NSLayoutConstraint *artworkViewHC =
+    	[NSLayoutConstraint constraintWithItem:self.artworkView 
+			attribute: NSLayoutAttributeLeft
+			relatedBy:NSLayoutRelationEqual 
+			toItem:self
+			attribute:NSLayoutAttributeLeft
+			multiplier:1
+			constant:10];
+	
+	NSLayoutConstraint *artworkViewHeightC =
+    	[NSLayoutConstraint constraintWithItem:self.artworkView 
+			attribute: NSLayoutAttributeHeight
+			relatedBy:NSLayoutRelationEqual 
+			toItem:self
+			attribute:NSLayoutAttributeWidth
+			multiplier:0.35
+			constant:0];
+	
+	NSLayoutConstraint *artworkViewWidthC =
+    	[NSLayoutConstraint constraintWithItem:self.artworkView 
+			attribute: NSLayoutAttributeWidth
+			relatedBy:NSLayoutRelationEqual 
+			toItem:self
+			attribute:NSLayoutAttributeWidth
+			multiplier:0.35
+			constant:0];
+	
+	[self addConstraint:artworkViewHC];
+	[self addConstraint:artworkViewVC];
+	[self addConstraint:artworkViewHeightC];
+	[self addConstraint:artworkViewWidthC];
+	
 }
 
 -(void)dealloc
 {		
 	[self.artworkView release];
-	
-	[self.backButton release];
 	
 	[super dealloc];
 }

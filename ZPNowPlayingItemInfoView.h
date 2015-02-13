@@ -1,5 +1,4 @@
 #import <UIKit/UIKit.h>
-#import <MediaPlayer/MediaPlayer.h>
 
 @class MPAVItem;
 
@@ -7,8 +6,7 @@
 
 @property (nonatomic, retain, readonly) UIView* artworkView;
 
--(instancetype)initWithFrame:(CGRect)frame 
-	                    item:(MPAVItem*)item
-						artworkImage:(UIImage*)artworkImage;
+-(instancetype)initWithItem:(MPAVItem*)item
+			   artworkImage:(UIImage*)artworkImage;
 
 @end
