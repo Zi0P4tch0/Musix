@@ -70,7 +70,7 @@
 			toItem:self
 			attribute:NSLayoutAttributeTop
 			multiplier:1
-			constant:10 + ARTWORK_VIEW_VISIBLE_AREA_WHEN_UP];
+			constant:ZP_INTRAITEM_SEP + ZP_ARTWORK_VISIBLE_AREA_WHEN_UP];
 	
 	NSLayoutConstraint *artworkViewHC =
     	[NSLayoutConstraint constraintWithItem:self.artworkView 
@@ -79,7 +79,7 @@
 			toItem:self
 			attribute:NSLayoutAttributeLeft
 			multiplier:1
-			constant:10];
+			constant:ZP_INTRAITEM_SEP];
 	
 	NSLayoutConstraint *artworkViewHeightC =
     	[NSLayoutConstraint constraintWithItem:self.artworkView 

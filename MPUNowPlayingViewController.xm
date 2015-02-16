@@ -76,7 +76,7 @@
 		CGFloat nextY = contentView.frame.origin.y + translatedPoint.y;
 				
 		if (nextY <= self.topLayoutGuide.length && 
-			nextY >= -contentView.frame.size.height + self.topLayoutGuide.length + ARTWORK_VIEW_VISIBLE_AREA_WHEN_UP)
+			nextY >= -contentView.frame.size.height + self.topLayoutGuide.length + ZP_ARTWORK_VISIBLE_AREA_WHEN_UP)
 		{
 			[contentView setCenter:
 					CGPointMake(contentView.center.x, 
@@ -90,9 +90,7 @@
 		lastCenter = [contentView center];
 	}
 	else if (panGR.state == UIGestureRecognizerStateEnded)
-	{		
-		//CGFloat velocity = [panGR velocityInView:contentView].y;
-			
+	{					
 		[panGR setEnabled:NO];
 		
 		if (goingUp) 
@@ -106,7 +104,7 @@
 								
 					contentView.frame =
 						CGRectMake(0,
-					               -contentView.frame.size.height + self.topLayoutGuide.length + ARTWORK_VIEW_VISIBLE_AREA_WHEN_UP,
+					               -contentView.frame.size.height + self.topLayoutGuide.length + ZP_ARTWORK_VISIBLE_AREA_WHEN_UP,
 								   contentView.frame.size.width,
 								   contentView.frame.size.height);
 				
@@ -179,48 +177,23 @@
 	[self.view addSubview:infoView];
 	[infoView release];
 	
-	if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
-	{
-		//iPad requires some tinkering
+	NSArray *infoViewVC = [NSLayoutConstraint constraintsWithVisualFormat:
+		@"V:[guide][infoView(infoViewHeight)]"
+		options:0
+		metrics:@{@"infoViewHeight":@(contentView.frame.size.height)}
+		views:@{@"infoView":infoView, @"guide": self.topLayoutGuide}];
 		
-		UIView *titlesView = MSHookIvar<UIView*>(self, "_titlesView");
+	NSArray *infoViewHC = [NSLayoutConstraint constraintsWithVisualFormat:
+		@"H:|[infoView]|"
+		options:0
+		metrics:@{}
+		views:@{@"infoView":infoView}];
 		
-		NSArray *infoViewVC = [NSLayoutConstraint constraintsWithVisualFormat:
-		    @"V:[titlesView][infoView(infoViewHeight)]"
-			options:0
-		    metrics:@{@"infoViewHeight":@(contentView.frame.size.height)}
-		    views:@{@"infoView":infoView, @"titlesView": titlesView}];
+	[self.view addConstraints:infoViewVC];
+	[self.view addConstraints:infoViewHC];
 		
-		NSArray *infoViewHC = [NSLayoutConstraint constraintsWithVisualFormat:
-			@"H:|[infoView]|"
-			options:0
-			metrics:@{}
-			views:@{@"infoView":infoView}];
-		
-		[self.view addConstraints:infoViewVC];
-		[self.view addConstraints:infoViewHC];
-	}
-	else
-	{
-		NSArray *infoViewVC = [NSLayoutConstraint constraintsWithVisualFormat:
-		    @"V:[guide][infoView(infoViewHeight)]"
-			options:0
-		    metrics:@{@"infoViewHeight":@(contentView.frame.size.height)}
-		    views:@{@"infoView":infoView, @"guide": self.topLayoutGuide}];
-		
-		NSArray *infoViewHC = [NSLayoutConstraint constraintsWithVisualFormat:
-			@"H:|[infoView]|"
-			options:0
-			metrics:@{}
-			views:@{@"infoView":infoView}];
-		
-		[self.view addConstraints:infoViewVC];
-		[self.view addConstraints:infoViewHC];
-	
-	}
-	
 	[self.view bringSubviewToFront:contentView];
-	
+		
 	[infoView setAlpha:0.f];
 }
 
@@ -309,15 +282,6 @@
 		[[UIActivityViewController alloc] initWithActivityItems:activityItems 
 										  applicationActivities:nil];
 	
-	if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
-	{
-		//iPad goes berserk if an anchor point is not specified
-		//http://stackoverflow.com/questions/25644054/uiactivityviewcontroller-crashing-on-ios8-ipads
-		
-		activityVC.popoverPresentationController.barButtonItem = 
-			[[[self _effectiveNavigationItem] rightBarButtonItems] lastObject];
-	}
-		
 	[self presentViewController:activityVC animated:YES completion:^{
 		
 		[activityVC release];
