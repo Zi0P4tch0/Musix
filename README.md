@@ -2,6 +2,8 @@
 
 Musix is a tweak for iOS 8 stock Music.app.
 
+![demo](https://raw.github.com/Zi0P4tch0/Musix/master/gifs/1.gif)
+
 Minimum deployment target: 8.0.
 
 ##Features
